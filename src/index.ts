@@ -2,8 +2,6 @@ import Arweave from 'arweave/node';
 const fs = require('fs').promises;
 const KEY_FILE_PATH = '/Users/andrew/Dropbox/arweave-keyfile-ghcQTA5S8nm-bKEZ0Z4Z9zP4HeME3D3kG-XPs1r--Vg.json';
 
-import PackageJSON from './package.json';
-
 const API_CONFIG = {
     host: 'arweave.net',// Hostname or IP address for a Arweave host
     port: 443,          // Port
@@ -21,7 +19,7 @@ const uploadFile = async (filePath: string, encoding: string = 'utf-8', arweaveK
             data,
         }, arweaveKey);
         transaction.addTag('Content-Type', 'text/html');
-        transaction.addTag('User-Agent', `ArweaveDeploy/${PackageJSON.version}`);
+        transaction.addTag('User-Agent', 'ArweaveWebpackPlugin');
 
         await arweave.transactions.sign(transaction, arweaveKey);
 
