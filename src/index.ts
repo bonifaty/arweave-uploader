@@ -1,6 +1,5 @@
 import Arweave from 'arweave/node';
 const fs = require('fs').promises;
-const KEY_FILE_PATH = '/Users/andrew/Dropbox/arweave-keyfile-ghcQTA5S8nm-bKEZ0Z4Z9zP4HeME3D3kG-XPs1r--Vg.json';
 
 const API_CONFIG = {
     host: 'arweave.net',// Hostname or IP address for a Arweave host
@@ -10,7 +9,7 @@ const API_CONFIG = {
     logging: false,     // Enable network request logging
 };
 
-const uploadFile = async (filePath: string, encoding: string = 'utf-8', arweaveKey) => {
+export const uploadFile = async (filePath: string, encoding: string = 'utf-8', arweaveKey) => {
     try {
         const data = await fs.readFile(filePath, encoding);
         const arweave = Arweave.init(API_CONFIG);
@@ -30,7 +29,8 @@ const uploadFile = async (filePath: string, encoding: string = 'utf-8', arweaveK
 
         console.log('here comes your balance', balance);
 
-        return;
+        return transaction;
+
 
         const response = await arweave.transactions.post(transaction);
 
@@ -45,7 +45,7 @@ const uploadFile = async (filePath: string, encoding: string = 'utf-8', arweaveK
     }
 };
 
-const getKey = async (keyFilePath) => {
+export const getKey = async (keyFilePath) => {
     try {
         const keyFile = await fs.readFile(keyFilePath, 'utf-8');
         return JSON.parse(keyFile);
@@ -55,14 +55,3 @@ const getKey = async (keyFilePath) => {
     }
 
 };
-
-
-(async () => {
-    console.log('Reading the key file');
-    const arweaveKey = await getKey(KEY_FILE_PATH);
-    console.log('Key received', Object.keys(arweaveKey));
-
-    console.log('Uploading file...');
-    uploadFile('./index.html', 'utf-8', arweaveKey);
-
-})();
