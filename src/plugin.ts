@@ -1,5 +1,6 @@
 import { Compiler } from 'webpack';
 import Arweave from 'arweave/node';
+import mime from 'mime';
 const fs = require('fs').promises;
 
 const API_CONFIG = {
@@ -20,7 +21,8 @@ export const uploadFile = async (filePath: string, encoding: string = 'utf-8', a
         const transaction = await arweave.createTransaction({
             data,
         }, arweaveKey);
-        transaction.addTag('Content-Type', 'text/html');
+        transaction.addTag('Content-Type', mime.getType(filePath));
+        console.log('setting content type', mime.getType(filePath))
         transaction.addTag('User-Agent', 'ArweaveWebpackPlugin');
 
         await arweave.transactions.sign(transaction, arweaveKey);
@@ -64,6 +66,9 @@ type ManifestPaths = {
 type Manifest = {
     manifest: string;
     version: string;
+    index?: {
+        path: string;
+    }
     paths: ManifestPaths;
 }
 
@@ -127,6 +132,9 @@ class ArweaveUploaderPlugin {
             const manifest: Manifest = {
                 manifest: 'arweave/paths',
                 version: '0.1.0',
+                index: {
+                    path: 'index.html', // move to settings
+                },
                 paths,
             };
 
