@@ -13,9 +13,9 @@ const API_CONFIG = {
 
 const arweave = Arweave.init(API_CONFIG);
 
-export const uploadFile = async (filePath: string, encoding: string = 'utf-8', arweaveKey) => {
+export const uploadFile = async (filePath: string, arweaveKey) => {
     try {
-        const data = await fs.readFile(filePath, encoding);
+        const data = await fs.readFile(filePath);
 
 
         const transaction = await arweave.createTransaction({
@@ -101,15 +101,18 @@ class ArweaveUploaderPlugin {
             const assets: string[] = [];
             for (const assetName in compilation.assets) {
                 const asset: Asset = compilation.assets[assetName];
+                console.log(assetName);
+                console.log(asset);
                 assets.push(asset.existsAt);
             }
             console.log(assets);
             console.log('output options');
             console.log(compilation.outputOptions.path);
 
+
             const txsPromises = assets.map(async filePath => ({
                 filePath,
-                transaction: await uploadFile(filePath, 'utf-8', arweaveKey)
+                transaction: await uploadFile(filePath, arweaveKey)
             }));
             const txs = await Promise.all(txsPromises)
             console.log('created transactions for all files', txs.map(tx => `${tx.filePath}:::${tx.transaction.id}`));
@@ -132,9 +135,9 @@ class ArweaveUploaderPlugin {
             const manifest: Manifest = {
                 manifest: 'arweave/paths',
                 version: '0.1.0',
-                index: {
+                /* index: {
                     path: 'index.html', // move to settings
-                },
+                },*/
                 paths,
             };
 
