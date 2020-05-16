@@ -21,21 +21,3 @@ describe('arweave set config', () => {
         expect(arweaveConfig.port).toBe(1984);
     });
 });
-
-describe('arweave check connection', () => {
-    it('fetch network info', () => {
-        const arweave = initArweave();
-        return arweave.network.getInfo().then((networkInfo) => {
-            const keys = Object.keys(networkInfo);
-            const expected = ['network', 'version'];
-            expect(keys).toEqual(expect.arrayContaining(expected));
-        })
-    });
-
-    it('should show arweave address', async () => {
-        const arweave = initArweave();
-        const arweaveKey = JSON.parse(process.env.TEST_KEYFILE_CONTENT);
-        const address = await arweave.wallets.jwkToAddress(arweaveKey);
-        expect(address.length).toBe(43);
-    });
-});
