@@ -34,7 +34,6 @@ describe('arweave check connection', () => {
 
     it('should show arweave address', async () => {
         const arweave = initArweave();
-        console.dir(process.env)
         const arweaveKey = JSON.parse(process.env.TEST_KEYFILE_CONTENT);
         const address = await arweave.wallets.jwkToAddress(arweaveKey);
         expect(address.length).toBe(43);
