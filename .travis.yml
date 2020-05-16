@@ -2,7 +2,8 @@ language: node_js
 node_js:
   - 12
 env:
-  - TEST_KEYFILE_CONTENT=$TEST_KEYFILE_CONTENT
+  global:
+    - TEST_KEYFILE_CONTENT=$TEST_KEYFILE_CONTENT
 script:
   - npm run test
 after_script:
