@@ -2,6 +2,6 @@ language: node_js
 node_js:
   - 12
 script:
-  - npm ci && npm run test
+  - npm run test
 after_script:
   - cat ./coverage/lcov.info | coveralls
