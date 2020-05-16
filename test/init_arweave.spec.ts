@@ -1,15 +1,6 @@
 import {initArweave} from "../src";
 
-describe('arweave init', () => {
-    it('fetch network info', () => {
-        const arweave = initArweave();
-        return arweave.network.getInfo().then((networkInfo) => {
-            const keys = Object.keys(networkInfo);
-            const expected = ['network', 'version'];
-            expect(keys).toEqual(expect.arrayContaining(expected));
-        })
-    });
-
+describe('arweave set config', () => {
     it('config should have default values', () => {
         const arweave = initArweave();
         const arweaveConfig = arweave.api.getConfig();
@@ -28,5 +19,23 @@ describe('arweave init', () => {
         expect(arweaveConfig.protocol).toBe('http');
         expect(arweaveConfig.host).toBe('127.0.0.1');
         expect(arweaveConfig.port).toBe(1984);
+    });
+});
+
+describe('arweave check connection', () => {
+    it('fetch network info', () => {
+        const arweave = initArweave();
+        return arweave.network.getInfo().then((networkInfo) => {
+            const keys = Object.keys(networkInfo);
+            const expected = ['network', 'version'];
+            expect(keys).toEqual(expect.arrayContaining(expected));
+        })
+    });
+
+    it('should show arweave address', async () => {
+        const arweave = initArweave();
+        const arweaveKey = JSON.parse(process.env.TEST_KEYFILE_CONTENT);
+        const address = await arweave.wallets.jwkToAddress(arweaveKey);
+        expect(address.length).toBe(43);
     });
 });
