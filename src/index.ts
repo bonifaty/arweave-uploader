@@ -11,7 +11,17 @@ const fs = require('fs').promises;
 import path from 'path';
 import Transaction from "arweave/node/lib/transaction";
 
-type ArweaveConfig = {
+export const getKeyFromFile = async (keyFilePath) => {
+    try {
+        const keyFile = await fs.readFile(keyFilePath, 'utf-8');
+        return JSON.parse(keyFile);
+    } catch (e) {
+        console.error('Failed to read the key file');
+        throw new Error(e);
+    }
+}
+
+export type ArweaveApiConfig = {
     host: string;
     port: number;
     protocol: 'https' | 'http',
@@ -19,7 +29,7 @@ type ArweaveConfig = {
     logging: boolean;
 }
 
-const DEFAULT_CONFIG: ArweaveConfig = {
+const DEFAULT_CONFIG: ArweaveApiConfig = {
     host: 'arweave.net',
     port: 443,
     protocol: 'https',
@@ -27,8 +37,8 @@ const DEFAULT_CONFIG: ArweaveConfig = {
     logging: false,
 };
 
-export const initArweave = (config?: Partial<ArweaveConfig>): Arweave => {
-    const configuration: ArweaveConfig = {
+export const initArweave = (config?: Partial<ArweaveApiConfig>): Arweave => {
+    const configuration: ArweaveApiConfig = {
         ...DEFAULT_CONFIG,
         ...config,
     };
@@ -126,3 +136,35 @@ export const createTransactionFromFile = async (filePath: string, arweave: Arwea
         throw new Error(e);
     }
 };
+
+export class ArweaveUploader {
+    private arweave: Arweave;
+    private arweaveKey: any;
+    private initialized: boolean = false;
+    constructor () {
+        console.log('here is the constructor');
+    }
+
+    async init(keyFilePath: string, arweaveApiConfig?: Partial<ArweaveApiConfig>) {
+        console.log('here comes the init');
+        this.arweave = initArweave(arweaveApiConfig);
+        this.arweaveKey = await getKeyFromFile(keyFilePath);
+        this.initialized = true;
+    }
+
+    async uploadAssets(assets: string[], rootDirectory: string, indexPath?: string) {
+        if (!this.initialized) {
+            console.error('Not initialized, please call init')
+            return;
+        }
+
+        const transactions = await createFileTransactions(assets, rootDirectory, this.arweave, this.arweaveKey);
+
+        for (const transaction of transactions) {
+            await uploadTransaction(transaction, this.arweave);
+        }
+
+        return transactions;
+    }
+
+}
