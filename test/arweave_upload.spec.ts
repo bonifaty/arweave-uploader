@@ -16,7 +16,7 @@ describe('arweave upload fixtures', () => {
         const arweaveUploader = new ArweaveUploader();
 
         await arweaveUploader.init('/tmp/key.json');
-        await arweaveUploader.uploadAssets(filesAbsolutePathsArray, rootDirectoryAbsolutePath, 'index.html');
+        await arweaveUploader.uploadAssets(filesAbsolutePathsArray, rootDirectoryAbsolutePath, 'index.html', false);
     });
 });
 

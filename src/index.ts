@@ -145,7 +145,7 @@ export class ArweaveUploader {
         return await Promise.all(transactionsPromises);
     }
 
-    async uploadAssets(assets: string[], rootPath: string, indexFile?: string): Promise<Transaction[]> {
+    async uploadAssets(assets: string[], rootPath: string, indexFile?: string, verbose = true): Promise<Transaction[]> {
         if (!this.initialized) {
             throw new Error('Uploader not initialized, please call init method');
         }
@@ -154,22 +154,25 @@ export class ArweaveUploader {
             throw new Error('Assets array is empty. Please provide list of assets for uploading.')
         }
 
-        console.log(`
+        if (verbose) {
+            console.log(`
 ------------------------------------------
   __ _ _ ____      _____  __ ___   _____ 
  / _\` | '__\\ \\ /\\ / / _ \\/ _\` \\ \\ / / _ \\
 | (_| | |   \\ V  V /  __/ (_| |\\ V /  __/
  \\__,_|_|    \\_/\\_/ \\___|\\__,_| \\_/ \\___|
-------------------------------------------
-`);
-        console.log(`Uploading assets from folder ${rootPath.green}\n`);
+------------------------------------------`);
+            console.log(`Uploading assets from folder ${rootPath.green}\n`);
+        }
 
         const assetTransactions = await this.createAssetsTransactions(assets, rootPath);
-        console.log('Transaction ID                              | File');
-        console.log('-----------------------------------------------------------------------------------------');
-        assetTransactions.forEach((assetTransaction) => {
-            console.log(`${assetTransaction.transaction.id} | ${assetTransaction.file.green} ${indexFile === assetTransaction.file ? '[INDEX FILE]' : ''}`);
-        });
+        if (verbose) {
+            console.log('Transaction ID                              | File');
+            console.log('-----------------------------------------------------------------------------------------');
+            assetTransactions.forEach((assetTransaction) => {
+                console.log(`${assetTransaction.transaction.id} | ${assetTransaction.file.green} ${indexFile === assetTransaction.file ? '[INDEX FILE]' : ''}`);
+            });
+        }
 
         const transactions = assetTransactions.map((assetTransaction) => assetTransaction.transaction);
 
@@ -180,8 +183,10 @@ export class ArweaveUploader {
         const manifestTransaction = await this.createManifestTransaction(assetTransactions);
         await this.uploadTransaction(manifestTransaction);
 
-        console.log(`\nSuccessfully uploaded ${assets.length} asset${assets.length > 1 ? 's' : ''}`.green);
-        console.log(`When transactions are confirmed, you will be able to access uploaded assets at https://arweave.net/${manifestTransaction.id}`);
+        if (verbose) {
+            console.log(`\nSuccessfully uploaded ${assets.length} asset${assets.length > 1 ? 's' : ''}`.green);
+            console.log(`When transactions are confirmed, you will be able to access uploaded assets at https://arweave.net/${manifestTransaction.id}`);
+        }
 
         return [manifestTransaction, ...transactions];
     }
