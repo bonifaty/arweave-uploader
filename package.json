@@ -23,7 +23,7 @@
     "dev": "tsc --watch",
     "build": "tsc",
     "test": "jest",
-    "test:watch": "jest --watch",
+    "test:watch": "jest --watch"
   },
   "author": "Andrew Abramov",
   "license": "MIT",
