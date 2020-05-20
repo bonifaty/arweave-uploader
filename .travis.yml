@@ -3,9 +3,8 @@ git:
 language: node_js
 node_js:
   - 12
-env:
-  global:
-    - TEST_KEYFILE_CONTENT=$TEST_KEYFILE_CONTENT
+before_install:
+  - echo $TEST_KEYFILE_CONTENT > /tmp/key.json
 script:
   - npm run test
 after_script:

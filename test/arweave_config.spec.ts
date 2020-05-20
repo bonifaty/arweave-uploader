@@ -1,16 +1,18 @@
-import {initArweave} from "../src";
+import { ArweaveUploader } from '../src';
 
-describe('arweave set config', () => {
-    it('config should have default values', () => {
-        const arweave = initArweave();
+describe('arweave init', () => {
+    it('config should have default values', async () => {
+        const arweaveUploader = new ArweaveUploader();
+        const arweave = await arweaveUploader.init('/tmp/key.json');
         const arweaveConfig = arweave.api.getConfig();
         expect(arweaveConfig.protocol).toBe('https');
         expect(arweaveConfig.host).toBe('arweave.net');
         expect(arweaveConfig.port).toBe(443);
     });
 
-    it('config should set arweave values', () => {
-        const arweave = initArweave({
+    it('init should set relevant config values', async () => {
+        const arweaveUploader = new ArweaveUploader();
+        const arweave = await arweaveUploader.init('/tmp/key.json', {
             protocol: 'http',
             host: '127.0.0.1',
             port: 1984

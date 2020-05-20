@@ -1,25 +1,18 @@
-// init arweave
-
-// upload Files
-// USAGE:
-// ArweaveUploader.upload(filesArray, configuration)
-
 import Arweave from "arweave/node";
-import {JWKInterface} from "arweave/node/lib/wallet";
 import mime from 'mime';
+import colors from 'colors';
 const fs = require('fs').promises;
 import path from 'path';
+
 import Transaction from "arweave/node/lib/transaction";
 
-export const getKeyFromFile = async (keyFilePath) => {
-    try {
-        const keyFile = await fs.readFile(keyFilePath, 'utf-8');
-        return JSON.parse(keyFile);
-    } catch (e) {
-        console.error('Failed to read the key file');
-        throw new Error(e);
-    }
-};
+colors.setTheme({
+    info: 'bgGreen',
+    help: 'cyan',
+    warn: 'yellow',
+    success: 'bgBlue',
+    error: 'red'
+});
 
 export type ArweaveApiConfig = {
     host: string;
@@ -37,27 +30,6 @@ const DEFAULT_CONFIG: ArweaveApiConfig = {
     logging: false,
 };
 
-export const initArweave = (config?: Partial<ArweaveApiConfig>): Arweave => {
-    const configuration: ArweaveApiConfig = {
-        ...DEFAULT_CONFIG,
-        ...config,
-    };
-
-    return Arweave.init(configuration);
-};
-
-export const uploadTransaction = async (transaction, arweave) => {
-    const response = await arweave.transactions.post(transaction);
-
-    if ([200, 208].includes(response.status)) {
-        console.log('we have successfully got the file');
-        console.log('here comes the transaction response status', response.status);
-        console.log(`https://arweave.net/${transaction.id}`);
-    }
-
-    return response;
-};
-
 type ManifestPaths = {
     [index: string]: { id: string };
 }
@@ -71,109 +43,147 @@ type Manifest = {
     paths: ManifestPaths;
 }
 
-export const createFileTransactions = async (filePathsArray: string[], rootDirectoryPath: string, arweave: Arweave, arweaveKey: JWKInterface): Promise<Transaction[]> => {
-    if (!filePathsArray.length) {
-        console.error('empty array :(');
-        throw new Error('Empty array');
-    }
-
-    const transactionsPromises = filePathsArray.map(async filePath => ({
-        filePath,
-        transaction: await createTransactionFromFile(filePath, arweave, arweaveKey)
-    }));
-    const filesTransactions = await Promise.all(transactionsPromises);
-    const transactions = filesTransactions.map((fileTransaction) => fileTransaction.transaction);
-
-    const paths: ManifestPaths = {};
-
-    filesTransactions.forEach((file) => {
-        const relativePath = path.relative(rootDirectoryPath, file.filePath);
-        paths[relativePath] = {
-            id: file.transaction.id,
-        };
-    });
-
-    const manifest: Manifest = {
-        manifest: 'arweave/paths',
-        version: '0.1.0',
-        index: {
-            path: 'index.html', // move to settings, check if the file is among the files listed
-        },
-        paths,
-    };
-
-    const data = Buffer.from(JSON.stringify(manifest), 'utf8');
-
-    const manifestTransaction = await arweave.createTransaction(
-        {
-            data,
-        },
-        arweaveKey,
-    );
-
-    console.log('here comes the manifest', manifest);
-
-    manifestTransaction.addTag('Content-Type', 'application/x.arweave-manifest+json');
-    await arweave.transactions.sign(manifestTransaction, arweaveKey);
-
-    return [...transactions, manifestTransaction];
-};
-
-export const createTransactionFromFile = async (filePath: string, arweave: Arweave, arweaveKey: JWKInterface) => {
-    try {
-        const data = await fs.readFile(filePath);
-        const transaction = await arweave.createTransaction({
-            data,
-        }, arweaveKey);
-        transaction.addTag('Content-Type', mime.getType(filePath));
-
-        await arweave.transactions.sign(transaction, arweaveKey);
-
-        return transaction;
-    } catch (e) {
-        // Better way of handling the errors?
-        console.error('Failed to read the file', filePath);
-        throw new Error(e);
-    }
-};
+type AssetTransaction = {
+    file: string;
+    transaction: Transaction;
+}
 
 export class ArweaveUploader {
-    private arweave: Arweave;
+    private arweave!: Arweave;
     private arweaveKey: any;
     private initialized: boolean = false;
 
+    private async getKeyFromFile (keyFilePath: string) {
+        const keyFile = await fs.readFile(keyFilePath, 'utf-8');
+        try {
+            return JSON.parse(keyFile);
+        } catch (e) {
+            throw new Error(`Failed to parse wallet key file: ${e}`);
+        }
+    };
+
     async init(keyFilePath: string, arweaveApiConfig?: Partial<ArweaveApiConfig>) {
-        console.log('here comes the init');
-        this.arweave = initArweave(arweaveApiConfig);
-        this.arweaveKey = await getKeyFromFile(keyFilePath);
+        const configuration: ArweaveApiConfig = {
+            ...DEFAULT_CONFIG,
+            ...arweaveApiConfig,
+        };
+
+        this.arweave = Arweave.init(configuration);
+        this.arweaveKey = await this.getKeyFromFile(keyFilePath);
         this.initialized = true;
+        return this.arweave;
     }
 
-    async uploadAssets(assets: string[], rootDirectory: string, indexPath?: string) {
+    private async createTransactionFromFile (filePath: string) {
+        try {
+            const data = await fs.readFile(filePath);
+            const transaction = await this.arweave.createTransaction({
+                data,
+            }, this.arweaveKey);
+            const contentType = mime.getType(filePath);
+            if (contentType) {
+                transaction.addTag('Content-Type', contentType);
+            }
+
+            await this.arweave.transactions.sign(transaction, this.arweaveKey);
+
+            return transaction;
+        } catch (e) {
+            throw new Error(`Failed to read the file at ${filePath}`);
+        }
+    };
+
+    private async createManifestTransaction(assetTransactions: AssetTransaction[], indexFile?: string): Promise<Transaction> {
+        const paths: ManifestPaths = {};
+        assetTransactions.forEach((assetTransaction) => {
+            paths[assetTransaction.file] = {
+                id: assetTransaction.transaction.id,
+            };
+        });
+
+        const manifest: Manifest = {
+            manifest: 'arweave/paths',
+            version: '0.1.0',
+            paths,
+        };
+
+        if (indexFile && assetTransactions.find((assetTransaction) => assetTransaction.file === indexFile)) {
+            manifest.index = {
+                path: indexFile,
+            };
+        }
+
+        const data = Buffer.from(JSON.stringify(manifest), 'utf8');
+
+        const manifestTransaction = await this.arweave.createTransaction(
+            {
+                data,
+            },
+            this.arweaveKey,
+        );
+
+        manifestTransaction.addTag('Content-Type', 'application/x.arweave-manifest+json');
+        await this.arweave.transactions.sign(manifestTransaction, this.arweaveKey);
+        return manifestTransaction;
+    }
+
+    private async uploadTransaction(transaction: Transaction) {
+        const response = await this.arweave.transactions.post(transaction);
+
+        if (![200, 208].includes(response.status)) {
+            throw new Error(`Failed to upload transaction with ID: ${transaction.id}`);
+        }
+
+        return response;
+    }
+
+    private async createAssetsTransactions(assets: string[], rootPath: string): Promise<AssetTransaction[]> {
+        const transactionsPromises = assets.map(async filePath => ({
+            file: path.relative(rootPath, filePath),
+            transaction: await this.createTransactionFromFile(filePath),
+        }));
+        return await Promise.all(transactionsPromises);
+    }
+
+    async uploadAssets(assets: string[], rootPath: string, indexFile?: string): Promise<Transaction[]> {
         if (!this.initialized) {
-            console.error('Not initialized, please call init')
-            return;
+            throw new Error('Uploader not initialized, please call init method');
         }
 
-        console.log(`-------------------------------------------------
-    _                                           
-   /_\\   _ __ __      __ ___   __ _ __   __ ___ 
-  //_\\\\ | '__|\\ \\ /\\ / // _ \\ / _\` |\\ \\ / // _ \\
- /  _  \\| |    \\ V  V /|  __/| (_| | \\ V /|  __/
- \\_/ \\_/|_|     \\_/\\_/  \\___| \\__,_|  \\_/  \\___|
-                                                
--------------------------------------------------`);
+        if (!assets.length) {
+            throw new Error('Assets array is empty. Please provide list of assets for uploading.')
+        }
 
+        console.log(`
+------------------------------------------
+  __ _ _ ____      _____  __ ___   _____ 
+ / _\` | '__\\ \\ /\\ / / _ \\/ _\` \\ \\ / / _ \\
+| (_| | |   \\ V  V /  __/ (_| |\\ V /  __/
+ \\__,_|_|    \\_/\\_/ \\___|\\__,_| \\_/ \\___|
+------------------------------------------
+`);
+        console.log(`Uploading assets from folder ${rootPath.green}\n`);
 
-        const transactions = await createFileTransactions(assets, rootDirectory, this.arweave, this.arweaveKey);
+        const assetTransactions = await this.createAssetsTransactions(assets, rootPath);
+        console.log('Transaction ID                              | File');
+        console.log('-----------------------------------------------------------------------------------------');
+        assetTransactions.forEach((assetTransaction) => {
+            console.log(`${assetTransaction.transaction.id} | ${assetTransaction.file.green} ${indexFile === assetTransaction.file ? '[INDEX FILE]' : ''}`);
+        });
 
+        const transactions = assetTransactions.map((assetTransaction) => assetTransaction.transaction);
 
-        return;
         for (const transaction of transactions) {
-            await uploadTransaction(transaction, this.arweave);
+            await this.uploadTransaction(transaction);
         }
 
-        return transactions;
+        const manifestTransaction = await this.createManifestTransaction(assetTransactions);
+        await this.uploadTransaction(manifestTransaction);
+
+        console.log(`\nSuccessfully uploaded ${assets.length} asset${assets.length > 1 ? 's' : ''}`.green);
+        console.log(`When transactions are confirmed, you will be able to access uploaded assets at https://arweave.net/${manifestTransaction.id}`);
+
+        return [manifestTransaction, ...transactions];
     }
 
 }

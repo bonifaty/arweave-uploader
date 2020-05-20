@@ -5,15 +5,15 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@types/node": "^13.13.5",
-    "@types/webpack": "^4.41.12",
     "arweave": "^1.7.0",
-    "mime": "^2.4.5",
-    "ts-node": "^8.10.1",
-    "webpack": "^4.43.0"
+    "colors": "^1.4.0",
+    "mime": "^2.4.5"
   },
   "devDependencies": {
     "@types/jest": "^25.2.2",
+    "@types/mime": "^2.0.2",
+    "@types/node": "^13.13.5",
+    "@types/webpack": "^4.41.12",
     "coveralls": "^3.1.0",
     "jest": "^26.0.1",
     "ts-jest": "^26.0.0",
@@ -23,7 +23,7 @@
     "dev": "tsc --watch",
     "build": "tsc",
     "test": "jest",
-    "prepublish": "tsc"
+    "test:watch": "jest --watch",
   },
   "author": "Andrew Abramov",
   "license": "MIT",
