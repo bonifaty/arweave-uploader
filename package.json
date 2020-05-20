@@ -1,8 +1,9 @@
 {
-  "name": "arweave-webpack",
+  "name": "@arweave-cdn/uploader",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "dependencies": {
     "@types/node": "^13.13.5",
     "@types/webpack": "^4.41.12",
@@ -19,8 +20,19 @@
     "typescript": "^3.9.2"
   },
   "scripts": {
-    "test": "jest"
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "test": "jest",
+    "prepublish": "tsc"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Andrew Abramov",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bonifaty/arweave-uploader.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bonifaty/arweave-uploader/issues"
+  },
+  "homepage": "https://github.com/bonifaty/arweave-uploader#readme"
 }
