@@ -1,6 +1,6 @@
 {
   "name": "@arweave-cdn/uploader",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Tiny SDK to upload assets to Arweave permaweb",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

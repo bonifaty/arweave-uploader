@@ -180,7 +180,7 @@ export class ArweaveUploader {
             await this.uploadTransaction(transaction);
         }
 
-        const manifestTransaction = await this.createManifestTransaction(assetTransactions);
+        const manifestTransaction = await this.createManifestTransaction(assetTransactions, indexFile);
         await this.uploadTransaction(manifestTransaction);
 
         if (verbose) {
