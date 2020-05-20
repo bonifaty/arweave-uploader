@@ -1,10 +1,10 @@
-import Arweave from "arweave/node";
+import Arweave from 'arweave/node';
 import mime from 'mime';
 import colors from 'colors';
 const fs = require('fs').promises;
 import path from 'path';
 
-import Transaction from "arweave/node/lib/transaction";
+import Transaction from 'arweave/node/lib/transaction';
 
 colors.setTheme({
     info: 'bgGreen',
