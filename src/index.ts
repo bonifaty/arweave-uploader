@@ -19,7 +19,7 @@ export const getKeyFromFile = async (keyFilePath) => {
         console.error('Failed to read the key file');
         throw new Error(e);
     }
-}
+};
 
 export type ArweaveApiConfig = {
     host: string;
@@ -141,9 +141,6 @@ export class ArweaveUploader {
     private arweave: Arweave;
     private arweaveKey: any;
     private initialized: boolean = false;
-    constructor () {
-        console.log('here is the constructor');
-    }
 
     async init(keyFilePath: string, arweaveApiConfig?: Partial<ArweaveApiConfig>) {
         console.log('here comes the init');
@@ -158,8 +155,20 @@ export class ArweaveUploader {
             return;
         }
 
+        console.log(`-------------------------------------------------
+    _                                           
+   /_\\   _ __ __      __ ___   __ _ __   __ ___ 
+  //_\\\\ | '__|\\ \\ /\\ / // _ \\ / _\` |\\ \\ / // _ \\
+ /  _  \\| |    \\ V  V /|  __/| (_| | \\ V /|  __/
+ \\_/ \\_/|_|     \\_/\\_/  \\___| \\__,_|  \\_/  \\___|
+                                                
+-------------------------------------------------`);
+
+
         const transactions = await createFileTransactions(assets, rootDirectory, this.arweave, this.arweaveKey);
 
+
+        return;
         for (const transaction of transactions) {
             await uploadTransaction(transaction, this.arweave);
         }
